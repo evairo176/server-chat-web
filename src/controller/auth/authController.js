@@ -1,8 +1,7 @@
 const expressAsyncHandler = require("express-async-handler");
-const formidable = require("formidable");
-const validator = require("validator");
 const Auth = require("../../model/auth/authModel");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 //----------------------------------------------
 // Register
@@ -31,9 +30,28 @@ const registerController = expressAsyncHandler(async (req, res) => {
       image: localPath,
     });
 
-    res.json({
+    const token = jwt.sign(
+      {
+        id: userCreate._id,
+        username: userCreate.username,
+        email: userCreate.email,
+        image: userCreate.image,
+      },
+      process.env.JWT_SECRET_KEY,
+      {
+        expiresIn: process.env.JWT_EXPIRED,
+      }
+    );
+
+    const options = {
+      expires: new Date(
+        Date.now() + process.env.JWT_COOKIE_EXPIRED * 24 * 60 * 60 * 1000
+      ),
+    };
+
+    res.cookie("authToken", token, options).json({
       message: `Post with title  was created successfully`,
-      userCreate: userCreate,
+      token: token,
     });
   } catch (error) {
     res.json(error);
